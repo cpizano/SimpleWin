@@ -23,7 +23,7 @@ struct MessageHandler {
 };
 
 
-HWND MakeWindow(const wchar_t* title, ULONG style, HMENU menu,  MessageHandler* handlers) {
+HWND MakeWindow(const wchar_t* title, ULONG style, HMENU menu, const SIZE& size, MessageHandler* handlers) {
   WNDCLASSEXW wcex = {sizeof(wcex)};
   wcex.hCursor = ::LoadCursorW(NULL, IDC_ARROW);
   wcex.hInstance = ThisModule();
@@ -44,7 +44,7 @@ HWND MakeWindow(const wchar_t* title, ULONG style, HMENU menu,  MessageHandler* 
   ATOM atom = VerifyNot(::RegisterClassExW(&wcex), 0);
   int pos_def = CW_USEDEFAULT;
   return ::CreateWindowExW(0, MAKEINTATOM(atom), title, style,
-                           pos_def, pos_def, pos_def, pos_def,
+                           pos_def, pos_def, size.cx, size.cy,
                            NULL, menu, ThisModule(), NULL); 
 }
 
@@ -73,6 +73,11 @@ int __stdcall wWinMain(HINSTANCE module, HINSTANCE, wchar_t* cc, int) {
       return 0;
     }},
 
+    { WM_DISPLAYCHANGE, [] (HWND window, WPARAM, LPARAM) -> LRESULT {
+      ::InvalidateRect(window, NULL, TRUE);
+      return 0;
+    }},
+
     { WM_CLOSE, [] (HWND window, WPARAM, LPARAM) -> LRESULT {
       ::PostQuitMessage(0);
       return 0;
@@ -86,8 +91,9 @@ int __stdcall wWinMain(HINSTANCE module, HINSTANCE, wchar_t* cc, int) {
     {-1, NULL}
   };
 
+  SIZE size = {200, 200};
   HWND main_window = VerifyNot(
-    MakeWindow(L"main/by/cpu", WS_OVERLAPPEDWINDOW | WS_VISIBLE, NULL, msg_handlers), HWND(NULL));
+    MakeWindow(L"main/by/cpu", WS_OVERLAPPEDWINDOW | WS_VISIBLE, NULL, size, msg_handlers), HWND(NULL));
 
   MSG msg;
   while (VerifyNot(::GetMessageW(&msg, NULL, 0, 0), -1)) {
