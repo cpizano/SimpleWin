@@ -48,7 +48,6 @@ HWND MakeWindow(const wchar_t* title, ULONG style, HMENU menu, const SIZE& size,
                            NULL, menu, ThisModule(), NULL); 
 }
 
-
 int __stdcall wWinMain(HINSTANCE module, HINSTANCE, wchar_t* cc, int) {
 
   static int count = 0;
