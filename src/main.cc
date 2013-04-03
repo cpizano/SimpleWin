@@ -23,14 +23,13 @@ struct MessageHandler {
 };
 
 
-HWND MakeMainWindow(const wchar_t* title, ULONG style, HMENU menu,  MessageHandler* handlers) {
-  static MessageHandler* s_handlers = handlers;
-
+HWND MakeWindow(const wchar_t* title, ULONG style, HMENU menu,  MessageHandler* handlers) {
   WNDCLASSEXW wcex = {sizeof(wcex)};
   wcex.hCursor = ::LoadCursorW(NULL, IDC_ARROW);
   wcex.hInstance = ThisModule();
   wcex.lpszClassName = __FILEW__;
   wcex.lpfnWndProc = [] (HWND window, UINT message, WPARAM wparam, LPARAM lparam) -> LRESULT {
+    static MessageHandler* s_handlers = reinterpret_cast<MessageHandler*>(lparam);
     size_t ix = 0;
     while (s_handlers[ix].message != -1) {
       if (s_handlers[ix].message == message)
@@ -41,6 +40,7 @@ HWND MakeMainWindow(const wchar_t* title, ULONG style, HMENU menu,  MessageHandl
     return ::DefWindowProcW(window, message, wparam, lparam);
   };
 
+  wcex.lpfnWndProc(NULL, 0, 0, reinterpret_cast<UINT_PTR>(handlers));
   ATOM atom = VerifyNot(::RegisterClassExW(&wcex), 0);
   int pos_def = CW_USEDEFAULT;
   return ::CreateWindowExW(0, MAKEINTATOM(atom), title, style,
@@ -87,7 +87,7 @@ int __stdcall wWinMain(HINSTANCE module, HINSTANCE, wchar_t* cc, int) {
   };
 
   HWND main_window = VerifyNot(
-    MakeMainWindow(L"main/by/cpu", WS_OVERLAPPEDWINDOW | WS_VISIBLE, NULL, msg_handlers), HWND(NULL));
+    MakeWindow(L"main/by/cpu", WS_OVERLAPPEDWINDOW | WS_VISIBLE, NULL, msg_handlers), HWND(NULL));
 
   MSG msg;
   while (VerifyNot(::GetMessageW(&msg, NULL, 0, 0), -1)) {
